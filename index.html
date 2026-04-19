@@ -271,7 +271,7 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="var(--excel)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg> Save Excel
                 </div>
                 <label for="file-import" class="dropdown-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--excel)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="12" x2="12" y2="18"/><polyline points="9 15 12 12 15 15"/></svg> Load Excel
+                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--excel)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg> Load Excel
                 </label>
                 <div class="dropdown-item" onclick="loadFromCloud()">
                     <svg viewBox="0 0 24 24" fill="var(--cloud)" width="18" height="18"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.36 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg> Load Cloud
@@ -419,6 +419,24 @@
     </div>
 </div>
 
+<div id="cloud-load-modal" class="modal-overlay hidden">
+    <div class="modal-box" style="border: 1px solid var(--border-color);">
+        <h3 style="margin-top:0; margin-bottom: 15px; color:var(--text-light); font-size:16px;">☁️ Load Data Cloud</h3>
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom: 15px;">Pilih bulan yang ingin ditarik ke HP.</p>
+        <div class="form-group" style="text-align:left;">
+            <div class="custom-select-container">
+                <div class="custom-select-trigger" id="cloud-month-trigger" onclick="toggleCustomSelect('cloud-month-opts', event)">-- Pilih Bulan --</div>
+                <div class="custom-select-options hidden" id="cloud-month-opts"></div>
+            </div>
+            <input type="hidden" id="cloud-month-val" value="">
+        </div>
+        <div class="modal-actions">
+            <button class="modal-btn cancel" onclick="closeCloudLoadModal()">Batal</button>
+            <button class="modal-btn ok" id="btn-execute-load-cloud" onclick="executeLoadCloud()" style="background:var(--cloud); color:#000; border:none;" disabled>Download</button>
+        </div>
+    </div>
+</div>
+
 <div id="about-modal" class="modal-overlay hidden">
     <div class="modal-box" style="border: 1px solid #555; padding: 25px 20px; text-align: left; max-height: 85vh; overflow-y: auto; background: #000000;">
         
@@ -517,8 +535,7 @@
     // 1. PENGATURAN AWAL & DATABASE 
     // =========================================================
     const APP_VERSION = "3.0"; 
-    // MENGGUNAKAN LINK GOOGLE SHEETS BARU MILIK ANDA
-    const CLOUD_URL = "https://script.google.com/macros/s/AKfycbxorCj0Bg0p7Vht2VNIjA4qjgftQ4kpoGoS84mPEnQw-tPzYkzXQWJiGE93DjXLQsvmXw/exec";
+    const CLOUD_URL = "https://script.google.com/macros/s/AKfycbwb0SJIbBzZvZ74s1z1OGsHZuwB_sq3b7R91BnuGdawxpP69bTDVyC1IeozUQYezTgQ/exec";
 
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js').catch(() => console.log("SW tidak ditemukan."));
@@ -627,7 +644,7 @@
         overlay.classList.remove('hidden');
         input.classList.add('hidden');
         btnBatal.classList.add('hidden');
-        btnOk.classList.add('hidden'); // Sembunyikan default
+        btnOk.classList.add('hidden'); 
         if(loader) loader.classList.add('hidden');
         input.value = ''; 
         input.oninput = null;
@@ -636,7 +653,6 @@
 
         if (mode === 'loading') {
             if(loader) loader.classList.remove('hidden');
-            // Tombol OK tetap hidden, pengguna harus menunggu
         } else if (mode === 'delete' || mode === 'reverse') {
             btnBatal.classList.remove('hidden'); 
             btnOk.classList.remove('hidden');
@@ -676,17 +692,25 @@
     function closeAboutModal() { document.getElementById('about-modal').classList.add('hidden'); }
 
     // =========================================================
-    // 4. KODE CLOUD BACKUP & LOAD 
+    // 4. KODE CLOUD BACKUP & LOAD (OPSI B: SMART MENU)
     // =========================================================
     function backupToCloud() {
         const dropdownMenu = document.getElementById('dropdown-menu');
         if (dropdownMenu) dropdownMenu.classList.add('hidden');
         if(!CLOUD_URL || CLOUD_URL.includes("ISI_DENGAN")) return showPopup('alert', "Penyimpanan Cloud belum disetel!", 'var(--danger)');
         
-        // Mode 'loading' akan menghilangkan tombol OK dan memunculkan spinner
         showPopup('loading', "Mengunggah data ke Cloud...\nMohon tunggu sebentar.", 'var(--cloud)');
         
-        fetch(CLOUD_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(AppState.db) })
+        const activeMonth = document.getElementById('rekap-date-picker').dataset.rawDate.substring(0, 7);
+        const payload = {
+            activeMonth: activeMonth,
+            income: AppState.db.income,
+            expense: AppState.db.expense,
+            mutations: AppState.db.mutations,
+            plots: AppState.db.plots
+        };
+        
+        fetch(CLOUD_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) })
         .then(res => { if(!res.ok) throw new Error("Gagal menyambung"); return res.text(); })
         .then(res => { showPopup('alert', "Data berhasil di-Upload ke Cloud!", 'var(--cloud)'); })
         .catch(err => { showPopup('alert', "Gagal mengunggah! Pastikan koneksi internet aktif.", 'var(--danger)'); });
@@ -695,22 +719,73 @@
     function loadFromCloud() {
         document.getElementById('dropdown-menu').classList.add('hidden');
         if(!CLOUD_URL || CLOUD_URL.includes("ISI_DENGAN")) return showPopup('alert', "Penyimpanan Cloud belum disetel!", 'var(--danger)');
-        showPopup('reverse', "Yakin ingin Load Cloud? Data di HP yang belum di-Upload akan HILANG.", 'var(--danger)', () => {
-            
-            // Mode 'loading' untuk menghilangkan tombol OK saat proses download berjalan
-            showPopup('loading', "Mengunduh data dari Cloud...\nMohon tunggu sebentar.", 'var(--cloud)');
-            
-            const noCacheUrl = CLOUD_URL + "?t=" + new Date().getTime();
-            fetch(noCacheUrl)
-            .then(res => { if(!res.ok) throw new Error("Gagal menyambung"); return res.json(); })
-            .then(data => {
-                if(data && data.income) {
-                    AppState.db = data; simpanDatabase(); updateRekap(); updatePlotList(); updateWalletDropdownBalances();
-                    showPopup('alert', "Data berhasil dipulihkan dari Cloud!", 'var(--cloud)');
-                } else { showPopup('alert', "Data di Cloud kosong atau format salah.", 'var(--danger)'); }
-            })
-            .catch(err => { showPopup('alert', "Gagal mengunduh! Pastikan koneksi internet aktif.", 'var(--danger)'); });
-        });
+
+        showPopup('loading', "Mencari daftar bulan di Cloud...\nMohon tunggu.", 'var(--cloud)');
+
+        const noCacheUrl = CLOUD_URL + "?action=listMonths&t=" + new Date().getTime();
+        fetch(noCacheUrl)
+        .then(res => { if(!res.ok) throw new Error("Gagal menyambung"); return res.json(); })
+        .then(months => {
+            document.getElementById('custom-modal').classList.add('hidden');
+
+            if(!months || months.length === 0) {
+                return showPopup('alert', "Belum ada data apa pun di Cloud.", 'var(--danger)');
+            }
+
+            let htmlOpts = '';
+            const blnPdk = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+            months.forEach(m => {
+                const parts = m.split('-');
+                const display = `${blnPdk[parseInt(parts[1], 10)-1]} ${parts[0]}`;
+                htmlOpts += `<div class="custom-option" onclick="setCustomVal('cloud-month-val','cloud-month-trigger','cloud-month-opts','${m}', '${display}'); document.getElementById('btn-execute-load-cloud').disabled = false;">${display}</div>`;
+            });
+
+            document.getElementById('cloud-month-opts').innerHTML = htmlOpts;
+            document.getElementById('cloud-month-trigger').innerText = "-- Pilih Bulan --";
+            document.getElementById('cloud-month-trigger').style.color = "var(--text-muted)";
+            document.getElementById('cloud-month-val').value = "";
+            document.getElementById('btn-execute-load-cloud').disabled = true;
+            document.getElementById('cloud-load-modal').classList.remove('hidden');
+        })
+        .catch(err => { showPopup('alert', "Gagal menyambung ke Cloud! Pastikan koneksi internet aktif.", 'var(--danger)'); });
+    }
+
+    function closeCloudLoadModal() {
+        document.getElementById('cloud-load-modal').classList.add('hidden');
+    }
+
+    function executeLoadCloud() {
+        const selectedMonth = document.getElementById('cloud-month-val').value;
+        if(!selectedMonth) return;
+
+        closeCloudLoadModal();
+        showPopup('loading', "Mengunduh data bulan " + selectedMonth + "...\nMohon tunggu.", 'var(--cloud)');
+
+        const noCacheUrl = CLOUD_URL + "?action=loadMonth&month=" + selectedMonth + "&t=" + new Date().getTime();
+        fetch(noCacheUrl)
+        .then(res => { if(!res.ok) throw new Error("Gagal menyambung"); return res.json(); })
+        .then(data => {
+            if(data && data.income) {
+                AppState.db.income = AppState.db.income.filter(i => !i.date.startsWith(selectedMonth));
+                AppState.db.expense = AppState.db.expense.filter(e => !e.date.startsWith(selectedMonth));
+                AppState.db.mutations = AppState.db.mutations.filter(m => !m.date.startsWith(selectedMonth));
+
+                AppState.db.income.push(...data.income);
+                AppState.db.expense.push(...data.expense);
+                AppState.db.mutations.push(...data.mutations);
+                AppState.db.plots = data.plots || [];
+
+                simpanDatabase();
+                updateRekap();
+                updatePlotList();
+                updateWalletDropdownBalances();
+
+                showPopup('alert', "Data bulan " + selectedMonth + " berhasil ditarik!", 'var(--cloud)');
+            } else {
+                showPopup('alert', "Data di Cloud kosong atau format salah.", 'var(--danger)');
+            }
+        })
+        .catch(err => { showPopup('alert', "Gagal mengunduh! Pastikan koneksi internet aktif.", 'var(--danger)'); });
     }
 
     // =========================================================
@@ -803,7 +878,7 @@
     });
 
     // =========================================================
-    // 6. LOGIKA CRUD (DENGAN ANTI-OVERBUDGET)
+    // 6. LOGIKA CRUD 
     // =========================================================
     function prosesSimpanAkhir(tipe, tgl, ket, nom, dmp, plt, pfx) {
         AppState.db[tipe].push({ id: Utils.buatId(), date: tgl, desc: ket, amount: nom, wallet: dmp, plotId: plt });
