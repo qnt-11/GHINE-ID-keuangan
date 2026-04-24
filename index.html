@@ -274,6 +274,28 @@
         .creator-watermark { position: fixed; bottom: 15px; left: 12px; font-size: 9px; color: var(--text-muted); z-index: 9999; pointer-events: none; text-shadow: 0 1px 2px rgba(0,0,0,0.8); letter-spacing: 0.3px; }
         .creator-watermark .fam { font-size: 8px; font-weight: 500; }
         .creator-watermark .barla { font-size: 11px; font-weight: 700; color: var(--text-light); }
+
+        /* =========================================================
+           12. TITIPAN UANG
+        ========================================================= */
+        .titipan-list { max-height: 55vh; overflow-y: auto; padding: 0; margin: 0; list-style: none; }
+        .titipan-list::-webkit-scrollbar { width: 3px; }
+        .titipan-list::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+        .titipan-item { padding: 12px 0; border-bottom: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 6px; text-align: left; }
+        .titipan-item:last-child { border-bottom: none; }
+        .titipan-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .titipan-name { font-size: 13px; font-weight: 700; color: var(--text-light); display: flex; flex-direction: column; }
+        .titipan-amount { font-size: 13px; font-weight: 700; color: var(--wa-green); }
+        .titipan-actions { display: flex; gap: 8px; margin-top: 4px; }
+        .titipan-btn { background: var(--wa-bg); border: 1px solid var(--border-color); color: var(--text-light); padding: 5px 10px; border-radius: 6px; font-size: 10px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .titipan-btn:active { opacity: 0.6; }
+        .titipan-btn-selesai { color: var(--wa-green); border-color: var(--wa-green); }
+        .titipan-btn-hapus { color: var(--danger); background: transparent; border: none; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .titipan-btn-hapus svg { stroke: var(--danger); width: 18px; height: 18px; transition: 0.2s; }
+        .titipan-btn-hapus:active svg { transform: scale(0.8); }
+        
+        .titipan-selesai .titipan-name span:first-child, .titipan-selesai .titipan-amount { text-decoration: line-through; color: var(--danger) !important; }
+        .titipan-selesai .titipan-time { color: var(--danger); font-size: 10px; font-weight: 600; margin-top: 2px; }
     </style>
 </head>
 <body>
@@ -414,6 +436,13 @@
                 <div class="wallet-card area-ewallet"><small>E-WALLET</small><span id="bal-ewallet">0</span></div>
                 <div class="wallet-card area-darurat1"><small>DANA DARURAT</small><span id="bal-darurat1">0</span></div>
                 <div class="wallet-card area-darurat2"><small>DANA DARURAT 🔒</small><span id="bal-darurat2">0</span></div>
+            </div>
+            
+            <div style="display: flex; justify-content: center; margin-bottom: 12px; margin-top: 4px;">
+                <button class="btn-main audiowide-regular" onclick="bukaModalTitipan()" style="margin: 0; padding: 8px 16px; width: auto; border-radius: 20px; font-size: 11px; background-color: var(--wa-card) !important; border: 1px solid var(--wa-green) !important; color: var(--wa-green) !important; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 10px rgba(0,200,83,0.15);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    DAFTAR TITIPAN
+                </button>
             </div>
             
             <div style="display: flex; gap: 8px; margin-bottom: 10px; width: 100%; align-items: stretch;">
@@ -586,6 +615,57 @@
     </div>
 </div>
 
+<div id="titipan-modal" class="modal-overlay hidden" style="z-index: 20000;">
+    <div class="modal-box" style="padding: 20px; border-color: var(--wa-green); width: 90%; max-width: 350px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 10px;">
+            <h3 class="audiowide-regular" style="margin:0; color:var(--wa-green); font-size:15px;">Daftar Titipan</h3>
+            <button onclick="tutupModalTitipan()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; padding:0; display:flex;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+        </div>
+        <ul id="list-titipan" class="titipan-list"></ul>
+        <button class="btn-main btn-green audiowide-regular" onclick="bukaFormTitipan('tambah')" style="margin-top: 15px;">+ CATAT TITIPAN</button>
+    </div>
+</div>
+
+<div id="titipan-form-modal" class="modal-overlay hidden" style="z-index: 20001;">
+    <div class="modal-box" style="padding: 20px; border-color: var(--wa-green);">
+        <h3 id="titipan-form-title" class="audiowide-regular" style="margin-top:0; margin-bottom: 15px; color:var(--wa-green); font-size:15px;">Catat Titipan</h3>
+        <div class="form-group" style="text-align:left;"><label>Nama Penitip</label><input type="text" id="titipan-nama" class="auto-cap" placeholder="Misal: Budi" autocomplete="off"></div>
+        <div class="form-group" style="text-align:left;"><label>Jumlah (Rp)</label><input type="text" inputmode="numeric" id="titipan-nominal" placeholder="0" oninput="Utils.formatRibuanInput(event)"></div>
+        <div class="form-group" style="text-align:left;" id="titipan-wallet-group">
+            <label>Masuk ke Dompet</label>
+            <div class="custom-select-container">
+                <div class="custom-select-trigger text-ellipsis" id="titipan-wallet-trigger" onclick="toggleCustomSelect('titipan-wallet-opts', event)">Tunai</div>
+                <div class="custom-select-options hidden" id="titipan-wallet-opts"></div>
+            </div>
+            <input type="hidden" id="titipan-wallet" value="Tunai">
+        </div>
+        <input type="hidden" id="titipan-id-edit" value="">
+        <div class="modal-actions">
+            <button class="modal-btn cancel" onclick="document.getElementById('titipan-form-modal').classList.add('hidden');">BATAL</button>
+            <button class="modal-btn ok btn-green" onclick="simpanTitipan()">SIMPAN</button>
+        </div>
+    </div>
+</div>
+
+<div id="titipan-ambil-modal" class="modal-overlay hidden" style="z-index: 20001;">
+    <div class="modal-box" style="padding: 20px; border-color: var(--danger);">
+        <h3 class="audiowide-regular" style="margin-top:0; margin-bottom: 10px; color:var(--danger); font-size:15px;">Ambil Titipan</h3>
+        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 15px;">Uang <strong id="ambil-titipan-nama" style="color:#fff;"></strong> akan dikembalikan dari dompet mana?</p>
+        <div class="form-group" style="text-align:left;">
+            <div class="custom-select-container">
+                <div class="custom-select-trigger text-ellipsis" id="titipan-ambil-wallet-trigger" onclick="toggleCustomSelect('titipan-ambil-wallet-opts', event)">Tunai</div>
+                <div class="custom-select-options hidden" id="titipan-ambil-wallet-opts"></div>
+            </div>
+            <input type="hidden" id="titipan-ambil-wallet" value="Tunai">
+        </div>
+        <input type="hidden" id="titipan-id-ambil" value="">
+        <div class="modal-actions">
+            <button class="modal-btn cancel btn-red" onclick="document.getElementById('titipan-ambil-modal').classList.add('hidden');">BATAL</button>
+            <button class="modal-btn ok btn-red" onclick="prosesSelesaiTitipan(event)">KEMBALIKAN</button>
+        </div>
+    </div>
+</div>
+
 <input type="file" id="file-import" accept=".xlsx, .xls" class="hidden" onchange="importFromExcel(event)">
 <div class="creator-watermark">created by <span class="fam">fam</span><span class="barla audiowide-regular">BARLA</span></div>
 
@@ -601,9 +681,9 @@
     }
 
     let AppState = {
-        db: { income: [], expense: [], mutations: [], plots: [] },
+        db: { income: [], expense: [], mutations: [], plots: [], titipan: [] },
         charts: { arusKas: null, portofolio: null },
-        tempImport: [], tempImportPlots: [],
+        tempImport: [], tempImportPlots: [], tempImportTitipan: [],
         grafikSaatIni: { in: 0, out: 0, tunai: 0, bank: 0, ewal: 0, darurat1: 0, darurat2: 0, visibleExpenses: [] },
         prevBalances: { total: 0, in: 0, out: 0, tunai: 0, bank: 0, ewal: 0, darurat1: 0, darurat2: 0 }
     };
@@ -624,6 +704,7 @@
                 AppState.db.expense = parsed.expense || [];
                 AppState.db.mutations = parsed.mutations || [];
                 AppState.db.plots = parsed.plots || [];
+                AppState.db.titipan = parsed.titipan || []; 
             }
             saldoCache.valid = false;
         } catch (e) {
@@ -885,13 +966,13 @@
     // =========================================================
     function backupToCloud() {
         document.getElementById('dropdown-menu').classList.add('hidden');
-        if (AppState.db.income.length === 0 && AppState.db.expense.length === 0 && AppState.db.mutations.length === 0 && AppState.db.plots.length === 0) {
+        if (AppState.db.income.length === 0 && AppState.db.expense.length === 0 && AppState.db.mutations.length === 0 && AppState.db.plots.length === 0 && AppState.db.titipan.length === 0) {
             return showPopup('alert', "Data di HP kosong! Upload dibatalkan.", 'var(--danger)');
         }
         if(!CLOUD_URL || CLOUD_URL.includes("ISI_DENGAN")) return showPopup('alert', "Penyimpanan Cloud belum disetel!", 'var(--danger)');
         
         showPopup('loading', "Mengunggah data ke Cloud...\nMohon tunggu sebentar.", 'var(--cloud)');
-        const payload = { activeMonth: "ALL", income: AppState.db.income, expense: AppState.db.expense, mutations: AppState.db.mutations, plots: AppState.db.plots };
+        const payload = { activeMonth: "ALL", income: AppState.db.income, expense: AppState.db.expense, mutations: AppState.db.mutations, plots: AppState.db.plots, titipan: AppState.db.titipan };
         
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000); 
@@ -983,6 +1064,14 @@
                         }
                     });
                 }
+
+                if (data.titipan) {
+                    data.titipan.forEach(cloudTitipan => {
+                        if (!AppState.db.titipan.some(localTitipan => localTitipan.id === cloudTitipan.id)) {
+                            AppState.db.titipan.push(cloudTitipan);
+                        }
+                    });
+                }
                 
                 try {
                     simpanDatabase(); 
@@ -1070,7 +1159,9 @@
             {opts: 'out-wallet-opts', trigger: 'out-wallet-trigger', hidden: 'out-wallet'},
             {opts: 'mut-from-opts', trigger: 'mut-from-trigger', hidden: 'mut-from'},
             {opts: 'mut-to-opts', trigger: 'mut-to-trigger', hidden: 'mut-to'},
-            {opts: 'edit-wallet-opts', trigger: 'edit-wallet-trigger', hidden: 'edit-wallet'}
+            {opts: 'edit-wallet-opts', trigger: 'edit-wallet-trigger', hidden: 'edit-wallet'},
+            {opts: 'titipan-wallet-opts', trigger: 'titipan-wallet-trigger', hidden: 'titipan-wallet'},
+            {opts: 'titipan-ambil-wallet-opts', trigger: 'titipan-ambil-wallet-trigger', hidden: 'titipan-ambil-wallet'}
         ];
         
         const elMutFrom = document.getElementById('mut-from');
@@ -1087,7 +1178,7 @@
                 if (dd.hidden === 'mut-to' && w === mutFromVal) return; 
                 
                 let displayTxt = w;
-                if (dd.hidden !== 'in-wallet') {
+                if (dd.hidden !== 'in-wallet' && dd.hidden !== 'titipan-wallet') {
                     const bal = getSaldoDompet(w);
                     displayTxt = `${w} (Rp ${bal.toLocaleString('id-ID')})`;
                 }
@@ -1103,7 +1194,7 @@
                      return;
                 }
                 let triggerTxt = currentVal;
-                if (dd.hidden !== 'in-wallet') {
+                if (dd.hidden !== 'in-wallet' && dd.hidden !== 'titipan-wallet') {
                     const currentBal = getSaldoDompet(currentVal);
                     triggerTxt = `${currentVal} (Rp ${currentBal.toLocaleString('id-ID')})`;
                 }
@@ -1134,7 +1225,7 @@
                  if (descInput) descInput.value = ""; 
              }
         } else {
-             if (inputId !== 'in-wallet' && inputId !== 'cloud-month-val' && nilai !== "") {
+             if (inputId !== 'in-wallet' && inputId !== 'titipan-wallet' && inputId !== 'cloud-month-val' && nilai !== "") {
                  const bal = getSaldoDompet(nilai);
                  displayTxt = customDisplay !== null ? customDisplay : `${nilai} (Rp ${bal.toLocaleString('id-ID')})`;
              }
@@ -1390,6 +1481,11 @@
         const dataTarget = AppState.db[tipe].find(x => x.id === idItem);
         
         if (tipe === 'income') {
+            const isTitipan = AppState.db.titipan.some(t => t.incomeId === idItem && t.status === 'aktif');
+            if (isTitipan) {
+                return showPopup('alert', 'Batal: Ini adalah Uang Titipan yang masih aktif! Selesaikan atau hapus lewat tombol DAFTAR TITIPAN.', 'var(--danger)');
+            }
+
             const kekur = getSaldoDompet(dataTarget.wallet) - dataTarget.amount;
             if (kekur < 0) return showPopup('alert', `Batal: Saldo dompet kurang ${Utils.formatRp(Math.abs(kekur))}!`, '#ffffff');
         }
@@ -1551,19 +1647,18 @@
             let selisih = p.target - terpakai;
             let tSelisih, nSelisih, cSelisih;
             
-            // REVISI LOGIKA WARNA PLOT ANGGARAN
             if (selisih > 0) {
                 tSelisih = "Kurang";
                 nSelisih = `(-${Utils.formatRp(selisih)})`;
-                cSelisih = "var(--wa-green)"; // Hijau karena masih ada sisa anggaran
+                cSelisih = "var(--wa-green)";
             } else if (selisih < 0) {
                 tSelisih = "Lebih";
                 nSelisih = `(+${Utils.formatRp(Math.abs(selisih))})`;
-                cSelisih = "var(--danger)"; // Merah karena kelebihan batas
+                cSelisih = "var(--danger)";
             } else {
                 tSelisih = "Kurang";
                 nSelisih = "(Rp 0)";
-                cSelisih = "var(--danger)"; // Merah karena jatah anggaran sudah habis pas
+                cSelisih = "var(--danger)";
             }
             
             const cBayar = (terpakai >= p.target && p.target > 0) ? 'var(--danger)' : 'var(--wa-green)';
@@ -1880,6 +1975,12 @@
             const wsPlot = XLSX.utils.json_to_sheet(plotData); 
             XLSX.utils.book_append_sheet(wb, wsPlot, "Daftar_Plot"); 
         }
+
+        if(AppState.db.titipan && AppState.db.titipan.length > 0) { 
+            const wsTitipan = XLSX.utils.json_to_sheet(AppState.db.titipan); 
+            XLSX.utils.book_append_sheet(wb, wsTitipan, "Daftar_Titipan"); 
+        }
+
         XLSX.writeFile(wb, `uang_famBARLA_Backup_${Utils.tglHariIni()}.xlsx`);
     }
 
@@ -1922,6 +2023,7 @@
                 const wb = XLSX.read(new Uint8Array(ev.target.result), { type: 'array' });
                 AppState.tempImport = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
                 AppState.tempImportPlots = wb.SheetNames.includes("Daftar_Plot") ? XLSX.utils.sheet_to_json(wb.Sheets["Daftar_Plot"]) : [];
+                AppState.tempImportTitipan = wb.SheetNames.includes("Daftar_Titipan") ? XLSX.utils.sheet_to_json(wb.Sheets["Daftar_Titipan"]) : [];
                 document.getElementById('import-modal').classList.remove('hidden');
                 document.body.classList.add('modal-open');
             } catch (err) { showPopup('alert', "Format File tidak dikenali.", '#ffffff'); } finally { e.target.value = ''; }
@@ -1938,6 +2040,10 @@
                     AppState.db.plots.push({ id: p.ID, name: Utils.toTitleCase(p.Nama), target: Math.abs(Number(p.Target)) }); 
                 }
             }); 
+        }
+
+        if(AppState.tempImportTitipan && AppState.tempImportTitipan.length > 0) { 
+            AppState.db.titipan = AppState.tempImportTitipan;
         }
         
         if (mode === 'semua') {
@@ -2016,7 +2122,7 @@
             if (AppState.charts.portofolio) AppState.charts.portofolio.destroy();
             
             localStorage.removeItem('famBARLA_DB'); 
-            AppState.db = { income: [], expense: [], mutations: [], plots: [] }; 
+            AppState.db = { income: [], expense: [], mutations: [], plots: [], titipan: [] }; 
             simpanDatabase(); 
             updateRekap(); 
             updatePlotList(); 
@@ -2211,6 +2317,195 @@
     function terapkanVersi() {
         const elVersi = document.getElementById('app-version-display');
         if (elVersi) elVersi.innerText = `VERSI 1.00 (PRO)`;
+    }
+
+    // =========================================================
+    // FITUR: TITIP UANG (TERINTEGRASI DEBIT/KREDIT)
+    // =========================================================
+    function renderDaftarTitipan() {
+        const ul = document.getElementById('list-titipan');
+        if (!ul) return;
+        if (AppState.db.titipan.length === 0) {
+            ul.innerHTML = '<li style="text-align:center; padding: 30px 0; color:var(--border-color); font-size:11px;">- Belum ada titipan -</li>';
+            return;
+        }
+
+        let html = '';
+        const sorted = [...AppState.db.titipan].sort((a, b) => {
+            if (a.status === 'aktif' && b.status === 'selesai') return -1;
+            if (a.status === 'selesai' && b.status === 'aktif') return 1;
+            return b.id.localeCompare(a.id);
+        });
+
+        sorted.forEach(t => {
+            const isSelesai = t.status === 'selesai';
+            let aksiHtml = isSelesai ? 
+                `<button class="titipan-btn-hapus" onclick="hapusTitipan('${t.id}')" title="Hapus Riwayat"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>` : 
+                `<button class="titipan-btn" onclick="bukaFormTitipan('edit', '${t.id}')">EDIT</button>
+                 <button class="titipan-btn titipan-btn-selesai" onclick="bukaAmbilTitipan('${t.id}')">✔️ SELESAI</button>`;
+
+            html += `
+            <li class="titipan-item ${isSelesai ? 'titipan-selesai' : ''}">
+                <div class="titipan-header">
+                    <div class="titipan-name">
+                        <span>${Utils.amanHTML(t.nama)}</span>
+                        ${isSelesai ? `<span class="titipan-time">${t.dateOut}</span>` : `<span style="font-size:9px; color:var(--text-muted); font-weight:500;">Masuk: ${Utils.formatTglTampil(t.dateIn)}</span>`}
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span class="titipan-amount">${Utils.formatRp(t.amount)}</span>
+                        ${aksiHtml}
+                    </div>
+                </div>
+                ${!isSelesai ? `<div class="titipan-actions"></div>` : ''}
+            </li>`;
+        });
+        ul.innerHTML = html;
+    }
+
+    function bukaModalTitipan() {
+        document.getElementById('dropdown-menu').classList.add('hidden');
+        document.getElementById('balance-dropdown').classList.add('hidden');
+        renderDaftarTitipan();
+        document.getElementById('titipan-modal').classList.remove('hidden');
+        document.body.classList.add('modal-open');
+    }
+
+    function tutupModalTitipan() {
+        document.getElementById('titipan-modal').classList.add('hidden');
+        if(document.querySelectorAll('.modal-overlay:not(.hidden)').length === 0) document.body.classList.remove('modal-open');
+    }
+
+    function bukaFormTitipan(mode, id = null) {
+        document.getElementById('titipan-nama').value = '';
+        document.getElementById('titipan-nominal').value = '';
+        document.getElementById('titipan-id-edit').value = '';
+        
+        let opts = '';
+        ['Tunai', 'Bank', 'e-Wallet', 'Dana Darurat', 'Dana Darurat 🔒'].forEach(w => {
+            opts += `<div class="custom-option" onclick="setCustomVal('titipan-wallet','titipan-wallet-trigger','titipan-wallet-opts','${w}')">${w}</div>`;
+        });
+        document.getElementById('titipan-wallet-opts').innerHTML = opts;
+
+        if (mode === 'tambah') {
+            document.getElementById('titipan-form-title').innerText = 'Catat Titipan Baru';
+            document.getElementById('titipan-wallet-group').style.display = 'block';
+            setCustomVal('titipan-wallet','titipan-wallet-trigger','titipan-wallet-opts','Tunai');
+        } else if (mode === 'edit') {
+            document.getElementById('titipan-form-title').innerText = 'Edit Nama / Nominal';
+            document.getElementById('titipan-wallet-group').style.display = 'none';
+            const data = AppState.db.titipan.find(x => x.id === id);
+            if (data) {
+                document.getElementById('titipan-id-edit').value = data.id;
+                document.getElementById('titipan-nama').value = data.nama;
+                document.getElementById('titipan-nominal').value = data.amount.toLocaleString('id-ID');
+            }
+        }
+        document.getElementById('titipan-form-modal').classList.remove('hidden');
+    }
+
+    function simpanTitipan() {
+        const idEdit = document.getElementById('titipan-id-edit').value;
+        const nama = Utils.toTitleCase(document.getElementById('titipan-nama').value.trim());
+        const rawAmount = document.getElementById('titipan-nominal').value.trim();
+        const amount = Math.abs(Number(rawAmount.replace(/[^\d]/g, '')));
+        const dompet = document.getElementById('titipan-wallet').value;
+        const tglHariIni = Utils.tglHariIni();
+
+        if (!nama || rawAmount === '' || isNaN(amount) || amount <= 0) {
+            return showPopup('alert', 'Isi Nama dan Nominal dengan benar!', 'var(--wa-green)');
+        }
+
+        if (idEdit) {
+            const titipanData = AppState.db.titipan.find(x => x.id === idEdit);
+            if (titipanData) {
+                const debitData = AppState.db.income.find(x => x.id === titipanData.incomeId);
+                const dompetLama = debitData ? debitData.wallet : 'Tunai';
+                
+                const selisihNominal = titipanData.amount - amount;
+                if (selisihNominal > 0 && getSaldoDompet(dompetLama) < selisihNominal) {
+                    return showPopup('alert', `Batal: Saldo [${dompetLama}] sudah terpakai sebagian. Tidak bisa menurunkan nominal titipan!`, 'var(--danger)');
+                }
+
+                titipanData.nama = nama;
+                titipanData.amount = amount;
+                
+                if (debitData) {
+                    debitData.desc = "Titipan dari " + nama;
+                    debitData.amount = amount;
+                }
+            }
+        } else {
+            const titipanId = Utils.buatId();
+            const incomeId = Utils.buatId();
+            
+            AppState.db.income.push({
+                id: incomeId, date: tglHariIni, desc: "Titipan dari " + nama, amount: amount, wallet: dompet
+            });
+
+            AppState.db.titipan.push({
+                id: titipanId, incomeId: incomeId, nama: nama, amount: amount, dateIn: tglHariIni, status: 'aktif'
+            });
+        }
+
+        simpanDatabase(); updateRekap(); updateWalletDropdownBalances();
+        document.getElementById('titipan-form-modal').classList.add('hidden');
+        renderDaftarTitipan();
+    }
+
+    function bukaAmbilTitipan(id) {
+        const data = AppState.db.titipan.find(x => x.id === id);
+        if (!data) return;
+
+        document.getElementById('titipan-id-ambil').value = id;
+        document.getElementById('ambil-titipan-nama').innerText = data.nama + " (" + Utils.formatRp(data.amount) + ")";
+        
+        let opts = '';
+        ['Tunai', 'Bank', 'e-Wallet', 'Dana Darurat', 'Dana Darurat 🔒'].forEach(w => {
+            const bal = getSaldoDompet(w);
+            opts += `<div class="custom-option" onclick="setCustomVal('titipan-ambil-wallet','titipan-ambil-wallet-trigger','titipan-ambil-wallet-opts','${w}')">${w} (Rp ${bal.toLocaleString('id-ID')})</div>`;
+        });
+        document.getElementById('titipan-ambil-wallet-opts').innerHTML = opts;
+        setCustomVal('titipan-ambil-wallet','titipan-ambil-wallet-trigger','titipan-ambil-wallet-opts','Tunai');
+        
+        document.getElementById('titipan-ambil-modal').classList.remove('hidden');
+    }
+
+    function prosesSelesaiTitipan(event) {
+        const btn = event.target;
+        btn.disabled = true; setTimeout(() => btn.disabled = false, 1500);
+
+        const id = document.getElementById('titipan-id-ambil').value;
+        const dompet = document.getElementById('titipan-ambil-wallet').value;
+        const titipanData = AppState.db.titipan.find(x => x.id === id);
+        
+        if (!titipanData) return;
+
+        if (getSaldoDompet(dompet) < titipanData.amount) {
+            return showPopup('alert', `Batal: Saldo ${dompet} kurang! Pindah/Mutasi uang dulu.`, 'var(--danger)');
+        }
+
+        const waktu = new Date();
+        const jam = `${String(waktu.getHours()).padStart(2, '0')}:${String(waktu.getMinutes()).padStart(2, '0')}`;
+        const tglStr = `${waktu.getDate()} ${BlnPdk[waktu.getMonth()]} ${waktu.getFullYear()}`;
+        
+        titipanData.status = 'selesai';
+        titipanData.dateOut = `Diambil pada: ${tglStr} • ${jam}`;
+
+        AppState.db.expense.push({
+            id: Utils.buatId(), date: Utils.tglHariIni(), desc: "Pengembalian Titipan " + titipanData.nama, amount: titipanData.amount, wallet: dompet, plotId: null
+        });
+
+        simpanDatabase(); updateRekap(); updateWalletDropdownBalances();
+        document.getElementById('titipan-ambil-modal').classList.add('hidden');
+        renderDaftarTitipan();
+    }
+
+    function hapusTitipan(id) {
+        showPopup('delete', "Hapus nama ini dari daftar titipan?\n(Data Pemasukan/Pengeluarannya yang lalu akan tetap aman di Rekap)", '#ffffff', () => {
+            AppState.db.titipan = AppState.db.titipan.filter(x => x.id !== id);
+            simpanDatabase();
+            renderDaftarTitipan();
+        });
     }
 
     window.addEventListener('DOMContentLoaded', () => { 
