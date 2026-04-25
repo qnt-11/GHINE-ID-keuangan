@@ -700,10 +700,16 @@
     // 1. PENGATURAN AWAL & VARIABEL GLOBAL
     // =========================================================
     const APP_VERSION = "1.1"; 
-    const CLOUD_URL = "https://script.google.com/macros/s/AKfycbys6dWhs17sKw8W0XqTphNWdgu8tgviGcwfbfMNGgjiBKRuplM0CXsSTD-yieMx2P8Q/exec;
+    // FIX BUG: Tanda kutip penutup (") ditambahkan di akhir URL
+    const CLOUD_URL = "https://script.google.com/macros/s/AKfycbys6dWhs17sKw8W0XqTphNWdgu8tgviGcwfbfMNGgjiBKRuplM0CXsSTD-yieMx2P8Q/exec";
 
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js').catch(() => console.error("SW tidak ditemukan."));
+    // FIX BUG: Pendaftaran Service Worker dibungkus try...catch agar WebView tidak crash seketika
+    try {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js').catch((e) => console.error("SW error:", e));
+        }
+    } catch (e) {
+        console.warn("SW ditolak oleh sistem/wrapper:", e);
     }
 
     let AppState = {
